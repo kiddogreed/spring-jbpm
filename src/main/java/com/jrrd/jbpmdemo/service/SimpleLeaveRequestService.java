@@ -50,6 +50,9 @@ public class SimpleLeaveRequestService {
      * @return The LeaveRequest or null if not found
      */
     public LeaveRequest getLeaveRequest(String id) {
+        if (id == null) {
+            return null;
+        }
         return leaveRequests.get(id);
     }
     
@@ -69,9 +72,13 @@ public class SimpleLeaveRequestService {
      * @return true if the request was found and approved, false otherwise
      */
     public boolean approveLeaveRequest(String id) {
+        if (id == null) {
+            return false;
+        }
         LeaveRequest request = leaveRequests.get(id);
         if (request != null) {
             request.setApproved(true);
+            request.setApprovalDate(java.time.LocalDateTime.now());
             return true;
         }
         return false;
@@ -84,9 +91,13 @@ public class SimpleLeaveRequestService {
      * @return true if the request was found and rejected, false otherwise
      */
     public boolean rejectLeaveRequest(String id) {
+        if (id == null) {
+            return false;
+        }
         LeaveRequest request = leaveRequests.get(id);
         if (request != null) {
             request.setApproved(false);
+            request.setApprovalDate(null); // Clear approval date for rejected requests
             return true;
         }
         return false;
