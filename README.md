@@ -59,14 +59,183 @@ The application implements the following business process:
    - \> 5 days: **Requires manual approval**
 3. **Process Completion**: Request is either approved or pending manager approval
 
+### BPMN Process Flow Diagram
+
+```
+                                Leave Request Process Flow
+                                
+    [Start] → [Submit Leave Request] → [Approval Gateway] → [Auto Approve] → [End]
+                                              ↓
+                                      [Manager Approval] → [End]
+                                      
+┌─────────┐   ┌─────────────────────┐   ┌─────────────────┐   
+│  Start  │──▶│ Submit Leave Request│──▶│ Approval Gateway│   
+│  Event  │   │      (User Task)    │   │  (Days <= 5?)   │   
+└─────────┘   └─────────────────────┘   └─────────────────┘   
+                                                │
+                                        ┌───────┴───────┐
+                                        ▼               ▼
+                               ┌─────────────────┐ ┌──────────────────┐ 
+                               │  Auto Approve   │ │ Manager Approval │ 
+                               │ (Service Task)  │ │   (User Task)    │ 
+                               └─────────────────┘ └──────────────────┘ 
+                                        │               │
+                                        ▼               ▼
+                               ┌─────────────────┐ ┌──────────────────┐ 
+                               │   Auto End      │ │  Manager End     │ 
+                               │  (End Event)    │ │  (End Event)     │ 
+                               └─────────────────┘ └──────────────────┘ 
+```
+
 ### BPMN Process Definition
 
 The `leave.bpmn` file defines the business process with:
-- **Start Event**: Process initiation
-- **User Task**: Submit Leave Request
-- **Exclusive Gateway**: Decision point based on days requested
-- **Service Tasks**: Auto-approval and manager approval paths
-- **End Events**: Process completion
+
+#### Process Elements
+- **Start Event** (`startEvent`): Process initiation
+- **User Task** (`submitLeaveRequestTask`): Submit Leave Request - collects employee name and days requested
+- **Exclusive Gateway** (`approvalGateway`): Decision point based on days requested
+- **Service Task** (`autoApproveTask`): Automatic approval for requests ≤ 5 days
+- **User Task** (`managerApprovalTask`): Manual approval for requests > 5 days  
+- **End Events**: Process completion paths for both auto and manual approval
+
+#### Business Rules
+- **Auto-Approval Condition**: `return daysRequested <= 5;`
+- **Manager Approval Condition**: `return daysRequested > 5;`
+
+#### Process Variables
+- `employeeName` (String): Name of the employee requesting leave
+- `daysRequested` (Integer): Number of days requested
+- `approved` (Boolean): Approval status of the request
+
+### BPMN File Content
+
+<details>
+<summary>Click to view the complete BPMN 2.0 XML definition</summary>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                   xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                   xmlns:bpsim="http://www.bpsim.org/schemas/1.0" 
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI" 
+                   xmlns:drools="http://www.jboss.org/drools" 
+                   id="_l9gQ4WBfED6FcdlRiwXjrg" 
+                   exporter="jBPM Process Modeler" 
+                   exporterVersion="2.0" 
+                   targetNamespace="http://www.omg.org/bpmn20">
+  
+  <!-- Process Variable Definitions -->
+  <bpmn2:itemDefinition id="_employeeNameItem" structureRef="String"/>
+  <bpmn2:itemDefinition id="_daysRequestedItem" structureRef="Integer"/>
+  <bpmn2:itemDefinition id="_approvedItem" structureRef="Boolean"/>
+  
+  <!-- Main Process Definition -->
+  <bpmn2:process id="leave" 
+                 drools:packageName="com.jrrd.jbpmdemo" 
+                 drools:version="1.0" 
+                 drools:adHoc="false" 
+                 name="leave" 
+                 isExecutable="true" 
+                 processType="Public">
+    
+    <!-- Process Variables -->
+    <bpmn2:property id="employeeName" itemSubjectRef="_employeeNameItem" name="employeeName"/>
+    <bpmn2:property id="daysRequested" itemSubjectRef="_daysRequestedItem" name="daysRequested"/>
+    <bpmn2:property id="approved" itemSubjectRef="_approvedItem" name="approved"/>
+    
+    <!-- Sequence Flows -->
+    <bpmn2:sequenceFlow id="Flow_1leb6fz" sourceRef="startEvent" targetRef="submitLeaveRequestTask"/>
+    <bpmn2:sequenceFlow id="Flow_1hns7cv" sourceRef="submitLeaveRequestTask" targetRef="approvalGateway"/>
+    
+    <!-- Auto-Approval Flow (Days <= 5) -->
+    <bpmn2:sequenceFlow id="Flow_03h4cfe" name="Days &lt;= 5" sourceRef="approvalGateway" targetRef="autoApproveTask">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" language="http://www.java.com/java">
+        <![CDATA[return daysRequested <= 5;]]>
+      </bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    
+    <!-- Manager Approval Flow (Days > 5) -->
+    <bpmn2:sequenceFlow id="Flow_19m76sz" name="Days > 5" sourceRef="approvalGateway" targetRef="managerApprovalTask">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" language="http://www.java.com/java">
+        <![CDATA[return daysRequested > 5;]]>
+      </bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    
+    <bpmn2:sequenceFlow id="Flow_1qm6rhh" sourceRef="autoApproveTask" targetRef="autoApproveEnd"/>
+    <bpmn2:sequenceFlow id="Flow_1kl2djq" sourceRef="managerApprovalTask" targetRef="managerApproveEnd"/>
+    
+    <!-- Process Elements -->
+    <bpmn2:startEvent id="startEvent">
+      <bpmn2:outgoing>Flow_1leb6fz</bpmn2:outgoing>
+    </bpmn2:startEvent>
+    
+    <bpmn2:userTask id="submitLeaveRequestTask" name="Submit Leave Request">
+      <bpmn2:incoming>Flow_1leb6fz</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_1hns7cv</bpmn2:outgoing>
+      <!-- Task input/output specifications for employee name and days requested -->
+    </bpmn2:userTask>
+    
+    <bpmn2:exclusiveGateway id="approvalGateway" name="Approval Gateway" gatewayDirection="Diverging">
+      <bpmn2:incoming>Flow_1hns7cv</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_03h4cfe</bpmn2:outgoing>
+      <bpmn2:outgoing>Flow_19m76sz</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    
+    <bpmn2:serviceTask id="autoApproveTask" name="Auto Approve" implementation="Java">
+      <bpmn2:incoming>Flow_03h4cfe</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_1qm6rhh</bpmn2:outgoing>
+      <!-- Automatic approval service implementation -->
+    </bpmn2:serviceTask>
+    
+    <bpmn2:userTask id="managerApprovalTask" name="Manager Approval">
+      <bpmn2:incoming>Flow_19m76sz</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_1kl2djq</bpmn2:outgoing>
+      <!-- Manager approval task for requests > 5 days -->
+    </bpmn2:userTask>
+    
+    <bpmn2:endEvent id="autoApproveEnd">
+      <bpmn2:incoming>Flow_1qm6rhh</bpmn2:incoming>
+    </bpmn2:endEvent>
+    
+    <bpmn2:endEvent id="managerApproveEnd">
+      <bpmn2:incoming>Flow_1kl2djq</bpmn2:incoming>
+    </bpmn2:endEvent>
+  </bpmn2:process>
+  
+  <!-- Service Interface Definition -->
+  <bpmn2:interface id="_F01E9913-0211-4F51-89BB-EF68CD1BCC0A_ServiceInterface" 
+                   name="com.jrrd.jbpmdemo.service.LeaveApprovalService" 
+                   implementationRef="com.jrrd.jbpmdemo.service.LeaveApprovalService">
+    <bpmn2:operation id="_F01E9913-0211-4F51-89BB-EF68CD1BCC0A_ServiceOperation" 
+                     name="autoApprove" 
+                     implementationRef="autoApprove"/>
+  </bpmn2:interface>
+  
+  <!-- BPMN Diagram Information (Visual Layout) -->
+  <bpmndi:BPMNDiagram>
+    <bpmndi:BPMNPlane bpmnElement="leave">
+      <!-- Visual positioning and layout information for BPMN elements -->
+      <!-- This section defines the visual representation of the process -->
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>
+```
+
+</details>
+
+### Process Flow Explanation
+
+1. **Process Start**: The process begins with a start event
+2. **Leave Request Submission**: Employee fills out leave request form (User Task)
+3. **Decision Gateway**: System evaluates the number of days requested
+   - **Path A** (≤ 5 days): Automatic approval via Service Task
+   - **Path B** (> 5 days): Requires manager approval via User Task
+4. **Process End**: Both paths lead to their respective end events
+
+This BPMN definition serves as the blueprint for the business process, even though the current implementation uses a simplified service approach due to Kogito dependency complexities.
 
 ## Technologies Used
 
