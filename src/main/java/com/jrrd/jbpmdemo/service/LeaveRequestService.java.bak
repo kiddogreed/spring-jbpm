@@ -1,0 +1,113 @@
+package com.jrrd.jbpmdemo.service;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.kie.kogito.process.Process;
+import org.kie.kogito.process.Processes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class LeaveRequestService {
+
+  private static final Logger logger = LoggerFactory.getLogger(LeaveRequestService.class);
+  private final Processes processes;
+  
+  public LeaveRequestService(@Autowired(required = false) Processes processes) {
+      this.processes = processes;
+      if (processes != null) {
+          logger.info("Processes injected successfully: {}", 
+              processes.processIds());
+      } else {
+          logger.warn("Processes bean not available");
+      }
+  }
+  
+  /**
+   * Starts a new leave request process
+   * 
+   * @param employeeName Employee requesting leave
+   * @param days Days requested
+   * @return Process instance ID
+   * @throws ProcessNotFoundException if the leave process is not found
+   */
+  public String startLeaveRequest(String employeeName, int days) throws ProcessNotFoundException {
+      logger.info("Starting leave request for {} with {} days", employeeName, days);
+      
+      try {
+          // Make sure processes is available
+          if (processes == null) {
+              throw new ProcessNotFoundException("Kogito process engine not available");
+          }
+          
+          // Find the leave process by ID
+          Process<?> leaveProcess = processes.processById("leave");
+          if (leaveProcess == null) {
+              throw new ProcessNotFoundException("Process 'leave' not found");
+          }
+          
+          // Create model and set variables
+          Object model = leaveProcess.createModel();
+          
+          // Set parameters using reflection since we can't use the generated classes directly
+          Map<String, Object> params = new HashMap<>();
+          params.put("employeeName", employeeName);
+          params.put("daysRequested", days);
+          
+          // Try to call fromMap() method on the model
+          try {
+              model.getClass().getMethod("fromMap", Map.class).invoke(model, params);
+          } catch (Exception e) {
+              logger.warn("Could not set parameters via fromMap: {}", e.getMessage());
+              // Try direct setters
+              try {
+                  model.getClass().getMethod("setEmployeeName", String.class).invoke(model, employeeName);
+                  model.getClass().getMethod("setDaysRequested", Integer.TYPE).invoke(model, days);
+              } catch (Exception ex) {
+                  logger.warn("Could not set parameters via setters: {}", ex.getMessage());
+              }
+          }
+          
+          // Create process instance
+          Object processInstance = leaveProcess.createInstance(model);
+          
+          // Start the process using reflection
+          processInstance.getClass().getMethod("start").invoke(processInstance);
+          
+          // Get ID using reflection
+          String id = (String) processInstance.getClass().getMethod("id").invoke(processInstance);
+          logger.info("Started leave request process with ID: {}", id);
+          return id;
+      } catch (ProcessNotFoundException e) {
+          throw e;
+      } catch (Exception e) {
+          logger.error("Error starting process", e);
+          throw new ProcessOperationException("Failed to start leave request process", e);
+      }
+  }
+  
+  /**
+   * Exception thrown when a process is not found
+   */
+  public static class ProcessNotFoundException extends Exception {
+      private static final long serialVersionUID = 1L;
+      
+      public ProcessNotFoundException(String message) {
+          super(message);
+      }
+  }
+  
+  /**
+   * Exception thrown when a process operation fails
+   */
+  public static class ProcessOperationException extends RuntimeException {
+      private static final long serialVersionUID = 1L;
+      
+      public ProcessOperationException(String message, Throwable cause) {
+          super(message, cause);
+      }
+  }
+}
