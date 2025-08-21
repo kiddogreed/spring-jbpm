@@ -1,0 +1,79 @@
+### jBPM Demo API Testing
+### Use this file with VS Code REST Client extension
+
+### Health Check - Verify application is running
+GET http://localhost:8080/actuator/health
+
+### Create Leave Request - Auto-approved (≤ 5 days)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Alice Smith",
+  "daysRequested": 3
+}
+
+### Create Leave Request - Manual approval required (> 5 days)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Bob Johnson",
+  "daysRequested": 10
+}
+
+### Create Leave Request - Boundary case (exactly 5 days)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Charlie Brown",
+  "daysRequested": 5
+}
+
+### Get All Leave Requests
+GET http://localhost:8080/api/leave
+
+### Get Specific Leave Request (replace with actual ID from previous responses)
+# GET http://localhost:8080/api/leave/your-leave-request-id-here
+
+### Approve Leave Request (replace with actual ID of pending request)
+# PUT http://localhost:8080/api/leave/your-leave-request-id-here/approve
+
+### Reject Leave Request (replace with actual ID of pending request)  
+# PUT http://localhost:8080/api/leave/your-leave-request-id-here/reject
+
+### Test Invalid JSON (should return 400 Bad Request)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Invalid User",
+  "daysRequested": "not-a-number"
+}
+
+### Test Missing Fields (should return 400 Bad Request)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Missing Days"
+}
+
+### Test Negative Days (edge case)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Negative Days User",
+  "daysRequested": -1
+}
+
+### Test Zero Days (edge case)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Zero Days User",
+  "daysRequested": 0
+}

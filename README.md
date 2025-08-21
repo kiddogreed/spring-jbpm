@@ -3,6 +3,7 @@
 This project demonstrates the migration from jBPM to Kogito for business process management in a Spring Boot application. It showcases a simple leave request approval process that was originally designed for jBPM but has been adapted to work with both traditional service approaches and Kogito.
 
 ## Table of Contents
+- [Development Setup & Requirements](#development-setup--requirements)
 - [Overview](#overview)
 - [Project Structure](#project-structure)
 - [Business Process](#business-process)
@@ -11,6 +12,246 @@ This project demonstrates the migration from jBPM to Kogito for business process
 - [API Endpoints](#api-endpoints)
 - [Migration Notes](#migration-notes)
 - [Testing the Application](#testing-the-application)
+
+## Development Setup & Requirements
+
+### 🛠️ Required Tools & Applications
+
+#### **Core Development Tools**
+| Tool | Version | Purpose | Download Link |
+|------|---------|---------|---------------|
+| **Java JDK** | 17+ (LTS) or 21+ | Programming language runtime | [Oracle JDK](https://www.oracle.com/java/technologies/downloads/) / [OpenJDK](https://openjdk.org/) |
+| **Maven** | 3.6.0+ | Build tool and dependency management | [Apache Maven](https://maven.apache.org/download.cgi) |
+| **Git** | Latest | Version control | [Git SCM](https://git-scm.com/downloads) |
+
+#### **IDE Recommendations**
+| IDE | Version | Pros | Download Link |
+|-----|---------|------|---------------|
+| **Visual Studio Code** | Latest | Lightweight, excellent extensions | [VS Code](https://code.visualstudio.com/) |
+| **IntelliJ IDEA** | 2023.1+ | Full-featured Java IDE | [JetBrains](https://www.jetbrains.com/idea/) |
+| **Eclipse IDE** | 2023-03+ | Free, robust Java development | [Eclipse](https://www.eclipse.org/downloads/) |
+
+### 📦 Technology Stack & Versions
+
+#### **Framework Dependencies**
+```xml
+<!-- Core Spring Boot -->
+<spring-boot.version>3.1.6</spring-boot.version>
+<java.version>17</java.version>
+
+<!-- jBPM/Kogito -->
+<kogito.version>1.44.1.Final</kogito.version>
+<jbpm.version>7.74.1.Final</jbpm.version>
+
+<!-- Testing -->
+<junit.version>5.9.3</junit.version>
+<mockito.version>5.3.1</mockito.version>
+```
+
+#### **Key Dependencies**
+- **Spring Boot Starter Web**: REST API and web layer
+- **Spring Boot Starter Actuator**: Health checks and monitoring
+- **Spring Boot Starter Test**: JUnit 5, Mockito, Spring Test
+- **Spring Boot DevTools**: Hot reload and development utilities
+- **Jackson**: JSON serialization/deserialization
+- **Kogito BOM**: Business process management framework
+
+### 🧩 VS Code Extensions (Recommended)
+
+#### **Essential Extensions**
+| Extension | Publisher | Purpose | Install Command |
+|-----------|-----------|---------|----------------|
+| **Extension Pack for Java** | Microsoft | Complete Java development | `ext install vscjava.vscode-java-pack` |
+| **Spring Boot Extension Pack** | VMware | Spring Boot development tools | `ext install vmware.vscode-boot-dev-pack` |
+| **Maven for Java** | Microsoft | Maven project management | `ext install vscjava.vscode-maven` |
+| **Debugger for Java** | Microsoft | Java debugging capabilities | `ext install vscjava.vscode-java-debug` |
+
+#### **BPMN & Process Modeling**
+| Extension | Publisher | Purpose | Install Command |
+|-----------|-----------|---------|----------------|
+| **BPMN Editor** | Red Hat | Visual BPMN process design | `ext install redhat.vscode-bpmn-editor` |
+| **XML Tools** | Josh Johnson | XML formatting and validation | `ext install dotjoshjohnson.xml` |
+
+#### **Code Quality & Testing**
+| Extension | Publisher | Purpose | Install Command |
+|-----------|-----------|---------|----------------|
+| **SonarLint** | SonarSource | Code quality analysis | `ext install sonarsource.sonarlint-vscode` |
+| **Test Runner for Java** | Microsoft | JUnit test execution | `ext install vscjava.vscode-java-test` |
+| **Coverage Gutters** | ryanluker | Test coverage visualization | `ext install ryanluker.vscode-coverage-gutters` |
+
+#### **Development Productivity**
+| Extension | Publisher | Purpose | Install Command |
+|-----------|-----------|---------|----------------|
+| **GitLens** | GitKraken | Enhanced Git capabilities | `ext install eamodio.gitlens` |
+| **REST Client** | Huachao Mao | API testing directly in VS Code | `ext install humao.rest-client` |
+| **Auto Rename Tag** | Jun Han | Paired tag renaming | `ext install formulahendry.auto-rename-tag` |
+| **Bracket Pair Colorizer** | CoenraadS | Visual bracket matching | `ext install coenraads.bracket-pair-colorizer` |
+
+### ⚙️ VS Code Configuration
+
+#### **Workspace Settings (`.vscode/settings.json`)**
+```json
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.format.settings.url": "https://raw.githubusercontent.com/google/styleguide/gh-pages/eclipse-java-google-style.xml",
+    "java.saveActions.organizeImports": true,
+    "spring-boot.ls.logfile": {
+        "on": true
+    },
+    "files.exclude": {
+        "**/target": true,
+        "**/.classpath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.factorypath": true
+    }
+}
+```
+
+#### **Launch Configuration (`.vscode/launch.json`)**
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run jBPM Demo Application",
+            "request": "launch",
+            "mainClass": "com.jrrd.jbpmdemo.JbpmdemoApplication",
+            "projectName": "jbpmdemo",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Debug jBPM Demo Application",
+            "request": "launch",
+            "mainClass": "com.jrrd.jbpmdemo.JbpmdemoApplication",
+            "projectName": "jbpmdemo",
+            "args": "",
+            "vmArgs": "-Dspring.profiles.active=debug"
+        }
+    ]
+}
+```
+
+### 🔧 Environment Setup
+
+#### **Java Environment Variables**
+```bash
+# Windows
+set JAVA_HOME=C:\Program Files\Java\jdk-17
+set PATH=%JAVA_HOME%\bin;%PATH%
+
+# Linux/macOS
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+export PATH=$JAVA_HOME/bin:$PATH
+```
+
+#### **Maven Environment Variables**
+```bash
+# Windows
+set MAVEN_HOME=C:\Program Files\Apache\maven
+set PATH=%MAVEN_HOME%\bin;%PATH%
+
+# Linux/macOS
+export MAVEN_HOME=/opt/maven
+export PATH=$MAVEN_HOME/bin:$PATH
+```
+
+### 🚀 Quick Setup Script
+
+#### **Windows Setup (PowerShell)**
+```powershell
+# Check prerequisites
+java -version
+mvn -version
+git --version
+
+# Clone and setup project
+git clone https://github.com/kiddogreed/spring-jbpm.git
+cd spring-jbpm
+mvn clean compile
+mvn test
+mvn spring-boot:run
+```
+
+#### **Linux/macOS Setup (Bash)**
+```bash
+#!/bin/bash
+# Check prerequisites
+java -version
+mvn -version
+git --version
+
+# Clone and setup project
+git clone https://github.com/kiddogreed/spring-jbpm.git
+cd spring-jbpm
+mvn clean compile
+mvn test
+mvn spring-boot:run
+```
+
+### 🐳 Docker Development (Optional)
+
+#### **Dockerfile for Development**
+```dockerfile
+FROM openjdk:17-jdk-slim
+VOLUME /tmp
+COPY target/jbpmdemo-*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+
+#### **Docker Compose for Full Stack**
+```yaml
+version: '3.8'
+services:
+  jbpm-app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - postgres
+  
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: jbpmdb
+      POSTGRES_USER: jbpm
+      POSTGRES_PASSWORD: jbpm123
+    ports:
+      - "5432:5432"
+```
+
+### 📋 Development Checklist
+
+Before starting development, ensure:
+
+- [ ] **Java 17+** installed and configured
+- [ ] **Maven 3.6+** installed and accessible via PATH
+- [ ] **Git** configured with user credentials
+- [ ] **VS Code** with Java Extension Pack installed
+- [ ] **Spring Boot Extension Pack** installed
+- [ ] **BPMN Editor** extension for process modeling
+- [ ] Project cloned and dependencies resolved (`mvn clean compile`)
+- [ ] Tests passing (`mvn test`)
+- [ ] Application starts successfully (`mvn spring-boot:run`)
+- [ ] REST endpoints accessible (`curl http://localhost:8080/actuator/health`)
+
+### 🔍 Troubleshooting
+
+#### **Common Issues**
+| Issue | Solution |
+|-------|----------|
+| **Java version mismatch** | Ensure JAVA_HOME points to JDK 17+ |
+| **Maven not found** | Add Maven bin directory to PATH |
+| **Tests failing** | Check Java 23 compatibility issues with Mockito |
+| **Port 8080 in use** | Change server.port in application.properties |
+| **BPMN editor not working** | Install Red Hat BPMN Editor extension |
 
 ## Overview
 
@@ -239,49 +480,251 @@ This BPMN definition serves as the blueprint for the business process, even thou
 
 ## Technologies Used
 
-### Core Technologies
-- **Java 17+**: Programming language
-- **Spring Boot 3.1.6**: Application framework
-- **Maven**: Build and dependency management
+### 🏗️ **Core Framework Stack**
+| Technology | Version | Purpose | Documentation |
+|------------|---------|---------|---------------|
+| **Java** | 17+ (LTS) | Programming language runtime | [Oracle Java Docs](https://docs.oracle.com/en/java/javase/17/) |
+| **Spring Boot** | 3.1.6 | Application framework and auto-configuration | [Spring Boot Reference](https://docs.spring.io/spring-boot/docs/3.1.6/reference/htmlsingle/) |
+| **Maven** | 3.6.0+ | Build automation and dependency management | [Maven User Guide](https://maven.apache.org/guides/) |
 
-### Business Process Management
-- **jBPM**: Original BPM engine (legacy approach)
-- **Kogito 1.44.1.Final**: Cloud-native business process automation
-- **BPMN 2.0**: Process modeling standard
+### 🔄 **Business Process Management**
+| Technology | Version | Purpose | Documentation |
+|------------|---------|---------|---------------|
+| **jBPM** | 7.74.1.Final | Traditional BPM engine (legacy support) | [jBPM Documentation](https://docs.jboss.org/jbpm/release/7.74.1.Final/jbpm-docs/html_single/) |
+| **Kogito** | 1.44.1.Final | Cloud-native business automation platform | [Kogito Documentation](https://docs.kogito.kie.org/latest/html_single/) |
+| **BPMN 2.0** | Standard | Business Process Model and Notation | [BPMN Specification](https://www.omg.org/spec/BPMN/2.0/) |
 
-### Additional Dependencies
-- **Spring Boot Starter Web**: REST API support
-- **Spring Boot Starter Actuator**: Application monitoring
-- **Spring Boot DevTools**: Development utilities
+### 🌐 **Web & API Technologies**
+| Technology | Version | Purpose | Documentation |
+|------------|---------|---------|---------------|
+| **Spring Web MVC** | 6.0.13 | REST API framework | [Spring Web MVC](https://docs.spring.io/spring-framework/docs/6.0.13/reference/html/web.html) |
+| **Jackson** | 2.15.2 | JSON serialization/deserialization | [Jackson Documentation](https://github.com/FasterXML/jackson-docs) |
+| **Spring Boot Actuator** | 3.1.6 | Production monitoring and management | [Actuator Guide](https://docs.spring.io/spring-boot/docs/3.1.6/reference/html/actuator.html) |
+
+### 🧪 **Testing Framework**
+| Technology | Version | Purpose | Documentation |
+|------------|---------|---------|---------------|
+| **JUnit 5** | 5.9.3 | Unit testing framework | [JUnit 5 User Guide](https://junit.org/junit5/docs/5.9.3/user-guide/) |
+| **Mockito** | 5.3.1 | Mocking framework for unit tests | [Mockito Documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html) |
+| **Spring Boot Test** | 3.1.6 | Integration testing support | [Testing in Spring Boot](https://docs.spring.io/spring-boot/docs/3.1.6/reference/html/features.html#features.testing) |
+| **AssertJ** | 3.24.2 | Fluent assertion library | [AssertJ Documentation](https://assertj.github.io/doc/) |
+
+### 🛠️ **Development Tools**
+| Technology | Version | Purpose | Documentation |
+|------------|---------|---------|---------------|
+| **Spring Boot DevTools** | 3.1.6 | Hot reload and development utilities | [DevTools Features](https://docs.spring.io/spring-boot/docs/3.1.6/reference/html/using.html#using.devtools) |
+| **Maven Surefire Plugin** | 3.0.0 | Test execution and reporting | [Surefire Plugin](https://maven.apache.org/surefire/maven-surefire-plugin/) |
+| **Maven Compiler Plugin** | 3.11.0 | Java compilation configuration | [Compiler Plugin](https://maven.apache.org/plugins/maven-compiler-plugin/) |
+
+### 📊 **Complete Dependency Tree**
+
+#### **Production Dependencies**
+```xml
+<!-- Core Spring Boot -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+    <version>3.1.6</version>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+    <version>3.1.6</version>
+</dependency>
+
+<!-- jBPM/Kogito BOM -->
+<dependency>
+    <groupId>org.kie.kogito</groupId>
+    <artifactId>kogito-bom</artifactId>
+    <version>1.44.1.Final</version>
+    <type>pom</type>
+    <scope>import</scope>
+</dependency>
+
+<!-- Development Tools -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-devtools</artifactId>
+    <version>3.1.6</version>
+    <scope>runtime</scope>
+    <optional>true</optional>
+</dependency>
+```
+
+#### **Test Dependencies**
+```xml
+<!-- Spring Boot Test Starter -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <version>3.1.6</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- JUnit 5 Jupiter API -->
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <version>5.9.3</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Mockito for Java unit testing -->
+<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-junit-jupiter</artifactId>
+    <version>5.3.1</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### 🏷️ **Version Compatibility Matrix**
+| Java Version | Spring Boot | Maven | JUnit | Mockito | Kogito |
+|--------------|-------------|-------|-------|---------|--------|
+| **17 (LTS)** | 3.1.6 ✅ | 3.6+ ✅ | 5.9.3 ✅ | 5.3.1 ✅ | 1.44.1 ✅ |
+| **21 (LTS)** | 3.1.6 ✅ | 3.6+ ✅ | 5.9.3 ✅ | 5.3.1 ✅ | 1.44.1 ✅ |
+| **23** | 3.1.6 ⚠️ | 3.6+ ✅ | 5.9.3 ✅ | 5.3.1 ⚠️ | 1.44.1 ✅ |
+
+> **Note**: Java 23 has compatibility issues with Mockito due to Byte Buddy limitations. Use Java 17 or 21 for full testing functionality.
+
+### 🎯 **Architecture Patterns Used**
+- **MVC (Model-View-Controller)**: Separation of concerns in web layer
+- **Service Layer Pattern**: Business logic encapsulation
+- **DTO (Data Transfer Object)**: API data contracts
+- **Repository Pattern**: Data access abstraction (in-memory implementation)
+- **Dependency Injection**: IoC container management via Spring
+- **REST API Design**: Resource-based API endpoints
 
 ## Getting Started
 
-### Prerequisites
-- Java 17 or higher
-- Maven 3.6+
-- IDE (IntelliJ IDEA, Eclipse, VS Code)
+> 📋 **For detailed setup instructions, see the [Development Setup & Requirements](#development-setup--requirements) section above.**
 
-### Installation and Setup
+### Quick Start
+
+#### **Prerequisites Verification**
+Before proceeding, ensure you have the required tools installed:
+
+```bash
+# Verify Java installation (should be 17+)
+java -version
+
+# Verify Maven installation (should be 3.6+)
+mvn -version
+
+# Verify Git installation
+git --version
+```
+
+#### **Project Setup**
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd jbpmdemo
+   git clone https://github.com/kiddogreed/spring-jbpm.git
+   cd spring-jbpm
    ```
 
-2. **Build the project**
+2. **Build and verify the project**
    ```bash
+   # Clean and compile
    mvn clean compile
+   
+   # Run tests to verify setup
+   mvn test
+   
+   # Package the application
+   mvn package
    ```
 
 3. **Run the application**
    ```bash
+   # Start with Maven
    mvn spring-boot:run
+   
+   # OR run the JAR directly
+   java -jar target/jbpmdemo-0.0.1-SNAPSHOT.jar
    ```
 
 4. **Verify the application is running**
-   - Application starts on `http://localhost:8080`
-   - Check logs for: "jBPM to Kogito Migration Demo Application Started!"
+   ```bash
+   # Check application health
+   curl http://localhost:8080/actuator/health
+   
+   # Test leave request creation
+   curl -X POST -H "Content-Type: application/json" \
+     -d '{"employeeName": "John Doe", "daysRequested": 3}' \
+     http://localhost:8080/api/leave
+   ```
+   
+   Expected responses:
+   - Health check: `{"status":"UP"}`
+   - Leave request: JSON response with `id`, `approved: true`, and `approvalDate`
+
+#### **Development Environment Setup**
+
+5. **Configure VS Code (recommended)**
+   ```bash
+   # Install essential extensions
+   code --install-extension vscjava.vscode-java-pack
+   code --install-extension vmware.vscode-boot-dev-pack
+   code --install-extension redhat.vscode-bpmn-editor
+   
+   # Open project in VS Code
+   code .
+   ```
+
+6. **Alternative IDEs**
+   - **IntelliJ IDEA**: Import as Maven project, ensure Spring Boot plugin is enabled
+   - **Eclipse**: Import existing Maven project, install Spring Tools 4 plugin
+
+#### **API Testing Tools**
+
+For testing REST endpoints, you can use:
+
+| Tool | Purpose | Command/URL |
+|------|---------|-------------|
+| **cURL** | Command-line HTTP client | `curl -X POST -H "Content-Type: application/json" -d '{"employeeName":"John","daysRequested":3}' http://localhost:8080/api/leave` |
+| **Postman** | GUI-based API testing | [Download Postman](https://www.postman.com/downloads/) |
+| **VS Code REST Client** | API testing within VS Code | Create `.http` files with requests |
+| **HTTPie** | User-friendly command-line HTTP client | `http POST localhost:8080/api/leave employeeName=John daysRequested:=3` |
+
+#### **VS Code REST Client Example**
+Create a file named `api-test.http` in your project root:
+
+```http
+### Health Check
+GET http://localhost:8080/actuator/health
+
+### Create Leave Request (Auto-approved)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Alice Smith",
+  "daysRequested": 3
+}
+
+### Create Leave Request (Manual approval required)
+POST http://localhost:8080/api/leave
+Content-Type: application/json
+
+{
+  "employeeName": "Bob Johnson",
+  "daysRequested": 10
+}
+
+### Get All Leave Requests
+GET http://localhost:8080/api/leave
+
+### Get Specific Leave Request (replace {id} with actual ID)
+GET http://localhost:8080/api/leave/{id}
+
+### Approve Leave Request (replace {id} with actual ID)
+PUT http://localhost:8080/api/leave/{id}/approve
+
+### Reject Leave Request (replace {id} with actual ID)
+PUT http://localhost:8080/api/leave/{id}/reject
+```
 
 ## API Endpoints
 
